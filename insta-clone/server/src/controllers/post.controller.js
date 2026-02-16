@@ -50,4 +50,93 @@ async function createPost(req, res) {
   }
 }
 
-module.exports = { createPost };
+async function getPosts(req, res) {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "UnAuthenticated user - token empty" });
+    }
+
+    let decoded = null;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({
+        message: "UnAuthorized - Token not verifyed",
+      });
+    }
+
+    const userId = decoded.id;
+
+    const posts = await postModel.find({
+      user: userId,
+    });
+
+    if (!posts) {
+      return res.status(404).json({
+        message: "No Post found for User",
+      });
+    }
+
+    res.status(200).json({
+      message: "Post get successfully",
+      posts,
+    });
+  } catch (error) {
+    console.log("getting post Error:" + error);
+    res.status(500).json("server error");
+  }
+}
+
+async function getSinglePostDetails(req, res) {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "UnAuthenticated user - token empty" });
+    }
+
+    let decoded = null;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({
+        message: "UnAuthorized - Token not verifyed",
+      });
+    }
+
+    const userId = decoded.id;
+    const postId = req.params.postId
+
+    const post = await postModel.findById(postId)
+
+    if(!post){
+      return res.statsu(404).json({
+        message: "Post not found"
+      })
+    }
+
+    const isValidPost = post.user.toString() === userId
+
+    if(!isValidPost){
+      return res.status(403).json({
+        message: "Forbiden Content"
+      })
+    }
+
+    return res.status(200).json({
+      message: "Post Fetched Successfully!!!",
+      post
+    })
+  } catch (error) {
+    console.log("getting single post Error:" + error);
+    res.status(500).json("server error");
+  }
+}
+
+module.exports = { createPost, getPosts, getSinglePostDetails };
