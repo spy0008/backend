@@ -11,23 +11,6 @@ async function createPost(req, res) {
     const { caption } = req.body;
     const { buffer, originalname } = req.file;
 
-    const token = req.cookies.token;
-
-    if (!token) {
-      return res
-        .status(401)
-        .json({ message: "UnAuthenticated user - token empty" });
-    }
-
-    let decoded = null;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      return res.status(401).json({
-        message: "UnAuthorized - Token not verifyed",
-      });
-    }
-
     const file = await imageKit.files.upload({
       file: await toFile(Buffer.from(buffer), "file"),
       fileName: originalname,
@@ -37,7 +20,7 @@ async function createPost(req, res) {
     const post = await postModel.create({
       caption,
       imgUrl: file.url,
-      user: decoded.id,
+      user: req.user.id,
     });
 
     res.status(201).json({
@@ -52,24 +35,7 @@ async function createPost(req, res) {
 
 async function getPosts(req, res) {
   try {
-    const token = req.cookies.token;
-
-    if (!token) {
-      return res
-        .status(401)
-        .json({ message: "UnAuthenticated user - token empty" });
-    }
-
-    let decoded = null;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      return res.status(401).json({
-        message: "UnAuthorized - Token not verifyed",
-      });
-    }
-
-    const userId = decoded.id;
+    const userId = req.user.id;
 
     const posts = await postModel.find({
       user: userId,
@@ -93,46 +59,28 @@ async function getPosts(req, res) {
 
 async function getSinglePostDetails(req, res) {
   try {
-    const token = req.cookies.token;
+    const postId = req.params.postId;
 
-    if (!token) {
-      return res
-        .status(401)
-        .json({ message: "UnAuthenticated user - token empty" });
-    }
+    const post = await postModel.findById(postId);
 
-    let decoded = null;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      return res.status(401).json({
-        message: "UnAuthorized - Token not verifyed",
+    if (!post) {
+      return res.statsu(404).json({
+        message: "Post not found",
       });
     }
 
-    const userId = decoded.id;
-    const postId = req.params.postId
+    const isValidPost = post.user.toString() === req.user.id;
 
-    const post = await postModel.findById(postId)
-
-    if(!post){
-      return res.statsu(404).json({
-        message: "Post not found"
-      })
-    }
-
-    const isValidPost = post.user.toString() === userId
-
-    if(!isValidPost){
+    if (!isValidPost) {
       return res.status(403).json({
-        message: "Forbiden Content"
-      })
+        message: "Forbiden Content",
+      });
     }
 
     return res.status(200).json({
       message: "Post Fetched Successfully!!!",
-      post
-    })
+      post,
+    });
   } catch (error) {
     console.log("getting single post Error:" + error);
     res.status(500).json("server error");
