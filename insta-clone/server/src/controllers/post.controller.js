@@ -1,7 +1,8 @@
 const postModel = require("../models/post.model.js");
+const likeModel = require("../models/like.model.js");
 const ImageKit = require("@imagekit/nodejs");
 const { toFile } = require("@imagekit/nodejs");
-const jwt = require("jsonwebtoken");
+
 const imageKit = new ImageKit({
   privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
 });
@@ -87,4 +88,32 @@ async function getSinglePostDetails(req, res) {
   }
 }
 
-module.exports = { createPost, getPosts, getSinglePostDetails };
+async function likePost(req, res) {
+  try {
+    const userId = req.user.id;
+    const postId = req.params.postId;
+
+    const post = await postModel.findById(postId);
+
+    if (!post) {
+      return res.statsu(404).json({
+        message: "Post not found",
+      });
+    }
+
+    const like = await likeModel.create({
+      post: postId,
+      user: userId,
+    });
+
+    res.status(201).json({
+      message: "Post like successfully!!!",
+      like,
+    });
+  } catch (error) {
+    console.log("Error while like a post:" + error);
+    res.status(500).json("server error");
+  }
+}
+
+module.exports = { createPost, getPosts, getSinglePostDetails, likePost };
