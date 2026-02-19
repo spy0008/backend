@@ -38,7 +38,7 @@ async function registerUser(req, res) {
 
     res.status(201).json({
       success: true,
-      user: { id: user._id, username, email, bio },
+      user: { id: user._id, username, email, image: user.imageUrl, bio },
     });
   } catch (error) {
     console.error("Registration error:", error);
@@ -48,15 +48,15 @@ async function registerUser(req, res) {
 
 async function loginUser(req, res) {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) {
+    if (!username || !password) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     const user = await userModel
       .findOne({
-        email,
+        username,
       })
       .select("+password");
 
@@ -81,7 +81,7 @@ async function loginUser(req, res) {
 
     res.status(200).json({
       success: true,
-      user: { id: user._id, email },
+      user: { id: user._id, username, email: user.email },
     });
   } catch (error) {
     console.error("Login error:", error);

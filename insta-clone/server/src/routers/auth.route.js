@@ -11,7 +11,7 @@ authRouter.post("/register", registerUser);
 
 /**
  * - user login route
- * - /api/auth/register
+ * - /api/auth/login
  */
 authRouter.post("/login", loginUser);
 
