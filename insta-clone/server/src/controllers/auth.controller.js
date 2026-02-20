@@ -7,7 +7,9 @@ async function registerUser(req, res) {
     const { username, email, password, bio } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
     const userIsExist = await userModel.findOne({
@@ -15,7 +17,9 @@ async function registerUser(req, res) {
     });
 
     if (userIsExist) {
-      return res.status(409).json({ error: "User already exists" });
+      return res
+        .status(409)
+        .json({ success: false, message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -38,11 +42,11 @@ async function registerUser(req, res) {
 
     res.status(201).json({
       success: true,
-      user: { id: user._id, username, email, image: user.imageUrl, bio },
+      user: { id: user._id, username, email, profileImage: user.imageUrl, bio },
     });
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 }
 
@@ -51,7 +55,9 @@ async function loginUser(req, res) {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
     const user = await userModel
@@ -61,13 +67,17 @@ async function loginUser(req, res) {
       .select("+password");
 
     if (!user) {
-      return res.status(404).json({ error: "Invalid credentials" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
-    const campairPassword = await bcrypt.compare(password, user.password);
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
 
-    if (!campairPassword) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    if (!isPasswordMatch) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -85,8 +95,37 @@ async function loginUser(req, res) {
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ error: "Server error" });
+    res
+      .status(500)
+      .json({ success: false, success: false, message: "Server error" });
   }
 }
 
-module.exports = { registerUser, loginUser };
+async function getMe(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        username: user.username,
+        email: user.email,
+        bio: user.bio,
+        profileImage: user.imageUrl,
+      },
+    });
+  } catch (error) {
+    console.error("get me error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+module.exports = { registerUser, loginUser, getMe };

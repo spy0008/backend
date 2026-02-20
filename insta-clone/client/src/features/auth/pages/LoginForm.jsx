@@ -1,29 +1,24 @@
 import { useState } from "react";
 import "../styles/form.scss";
-import { Link } from "react-router-dom";
-import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth.js";
+import toast from "react-hot-toast";
 
 const LoginForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const { handleLogin, loading } = useAuth();
+  const navigate = useNavigate();
 
   async function handleFormSubmit(e) {
     e.preventDefault();
 
-    axios
-      .post(
-        "http://localhost:3000/api/auth/login",
-        {
-          username,
-          password,
-        },
-        {
-          withCredentials: true,
-        },
-      )
-      .then((res) => {
-        console.log(res.data);
-      });
+    const result = await handleLogin(username, password); // Use await instead of .then()
+
+    if (result) {
+      toast.success("Login Successfully!!!");
+      navigate("/");
+    }
 
     setUsername("");
     setPassword("");
@@ -49,7 +44,7 @@ const LoginForm = () => {
             placeholder="Enter password"
             required
           />
-          <button type="submit">Login</button>
+          <button type="submit"> {loading ? "Logging..." : "Login"}</button>
         </form>
 
         <p>
