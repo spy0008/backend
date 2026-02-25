@@ -15,9 +15,11 @@ const LoginForm = () => {
 
     const result = await handleLogin(username, password); // Use await instead of .then()
 
-    if (result) {
-      toast.success("Login Successfully!!!");
+    if (result.success) {
+      toast.success(result?.message || "Login Successfully!!!");
       navigate("/");
+    } else {
+      toast.error(result || "Login Failed");
     }
 
     setUsername("");

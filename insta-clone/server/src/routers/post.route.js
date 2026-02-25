@@ -4,6 +4,7 @@ const {
   getPosts,
   getSinglePostDetails,
   likePost,
+  getFeedPosts,
 } = require("../controllers/post.controller");
 const multer = require("multer");
 const authCheckUser = require("../middlewares/auth.middleware");
@@ -34,5 +35,11 @@ postRouter.get("/details/:postId", authCheckUser, getSinglePostDetails);
  * @routes /api/post/like/:postId
  */
 postRouter.post("/like/:postId", authCheckUser, likePost);
+
+/**
+ * @description get feed posts
+ * @routes /api/post/feed
+ */
+postRouter.get("/feed", authCheckUser, getFeedPosts);
 
 module.exports = postRouter;

@@ -116,4 +116,44 @@ async function likePost(req, res) {
   }
 }
 
-module.exports = { createPost, getPosts, getSinglePostDetails, likePost };
+async function getFeedPosts(req, res) {
+  try {
+    const user = req.user;
+
+    const posts = await Promise.all(
+      (await postModel.find().populate("user").lean()).map(async (post) => {
+        const isLiked = await likeModel.findOne({
+          user: user.id,
+          post: post._id,
+        });
+
+        post.isLiked = !!isLiked;
+
+        return post;
+      }),
+    );
+
+    if (!posts) {
+      return res.status(404).json({
+        success: false,
+        message: "Feed post not found.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "get All Feed post successfully",
+      posts,
+    });
+  } catch (error) {
+    console.log("getting feed posts Error:" + error);
+  }
+}
+
+module.exports = {
+  createPost,
+  getPosts,
+  getSinglePostDetails,
+  likePost,
+  getFeedPosts,
+};

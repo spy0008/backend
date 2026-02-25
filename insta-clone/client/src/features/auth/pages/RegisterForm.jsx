@@ -11,10 +11,15 @@ const RegisterForm = () => {
 
   async function handleFormSubmit(e) {
     e.preventDefault();
-    handleRegister(username, email, password).then((res) => {
-      console.log(res);
+    const result = await handleRegister(username, email, password);
+    I;
+
+    if (result.success) {
+      toast.success(result?.message || "Login Successfully!!!");
       navigate("/");
-    });
+    } else {
+      toast.error(result || "Register Failed");
+    }
     setUsername("");
     setEmail("");
     setPassword("");
