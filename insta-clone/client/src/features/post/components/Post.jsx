@@ -1,6 +1,4 @@
-import React from "react";
-
-const Post = ({ user, post }) => {
+const Post = ({ user, post, handleLikePost, handleUnLikePost }) => {
   return (
     <div className="post">
       <div className="user">
@@ -14,6 +12,11 @@ const Post = ({ user, post }) => {
         <div className="left">
           <button>
             <svg
+              onClick={() => {
+                post.isLiked
+                  ? handleUnLikePost(post._id)
+                  : handleLikePost(post._id);
+              }}
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill={post.isLiked ? "red" : "currentColor"}

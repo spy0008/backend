@@ -25,6 +25,7 @@ async function createPost(req, res) {
     });
 
     res.status(201).json({
+      success: true,
       message: "Post Created successfully!!!",
       post,
     });
@@ -44,11 +45,13 @@ async function getPosts(req, res) {
 
     if (!posts) {
       return res.status(404).json({
+        success: false,
         message: "No Post found for User",
       });
     }
 
     res.status(200).json({
+      success: true,
       message: "Post get successfully",
       posts,
     });
@@ -66,6 +69,7 @@ async function getSinglePostDetails(req, res) {
 
     if (!post) {
       return res.statsu(404).json({
+        success: false,
         message: "Post not found",
       });
     }
@@ -74,11 +78,13 @@ async function getSinglePostDetails(req, res) {
 
     if (!isValidPost) {
       return res.status(403).json({
+        success: false,
         message: "Forbiden Content",
       });
     }
 
     return res.status(200).json({
+      success: true,
       message: "Post Fetched Successfully!!!",
       post,
     });
@@ -97,6 +103,7 @@ async function likePost(req, res) {
 
     if (!post) {
       return res.statsu(404).json({
+        success: false,
         message: "Post not found",
       });
     }
@@ -107,6 +114,7 @@ async function likePost(req, res) {
     });
 
     res.status(201).json({
+      success: true,
       message: "Post like successfully!!!",
       like,
     });
@@ -116,21 +124,63 @@ async function likePost(req, res) {
   }
 }
 
+async function unlikePost(req, res) {
+  try {
+    const userId = req.user.id;
+    const postId = req.params.postId;
+
+    const post = await postModel.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    const isLiked = await likeModel.findOne({
+      post: postId,
+      user: userId,
+    });
+
+    if (!isLiked) {
+      return res.status(400).json({
+        success: false,
+        message: "you did not like this post!!!",
+      });
+    }
+
+    await likeModel.findOneAndDelete({
+      _id: isLiked._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Post unliked successfully!!!",
+    });
+  } catch (error) {
+    console.log("Error while unlike a post:" + error);
+    res.status(500).json("server error");
+  }
+}
+
 async function getFeedPosts(req, res) {
   try {
     const user = req.user;
 
     const posts = await Promise.all(
-      (await postModel.find().populate("user").lean()).map(async (post) => {
-        const isLiked = await likeModel.findOne({
-          user: user.id,
-          post: post._id,
-        });
+      (await postModel.find().populate("user").sort({ _id: -1 }).lean()).map(
+        async (post) => {
+          const isLiked = await likeModel.findOne({
+            user: user.id,
+            post: post._id,
+          });
 
-        post.isLiked = !!isLiked;
+          post.isLiked = !!isLiked;
 
-        return post;
-      }),
+          return post;
+        },
+      ),
     );
 
     if (!posts) {
@@ -156,4 +206,5 @@ module.exports = {
   getSinglePostDetails,
   likePost,
   getFeedPosts,
+  unlikePost,
 };

@@ -5,6 +5,7 @@ const {
   getSinglePostDetails,
   likePost,
   getFeedPosts,
+  unlikePost,
 } = require("../controllers/post.controller");
 const multer = require("multer");
 const authCheckUser = require("../middlewares/auth.middleware");
@@ -35,6 +36,12 @@ postRouter.get("/details/:postId", authCheckUser, getSinglePostDetails);
  * @routes /api/post/like/:postId
  */
 postRouter.post("/like/:postId", authCheckUser, likePost);
+
+/**
+ * @description unlike a post
+ * @routes /api/post/unlike/:postId
+ */
+postRouter.post("/unlike/:postId", authCheckUser, unlikePost);
 
 /**
  * @description get feed posts
