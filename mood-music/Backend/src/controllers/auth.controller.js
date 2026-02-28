@@ -1,4 +1,5 @@
 const userModel = require("../models/user.model.js");
+const blacklistModel = require("../models/blacklist.model.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -113,4 +114,46 @@ async function loginUser(req, res) {
   }
 }
 
-module.exports = { registerUser, loginUser };
+async function getMe(req, res) {
+  try {
+    const user = await userModel.findById(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      message: "User Fetched successfully!!!",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("Get Me error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server error" });
+  }
+}
+
+async function logoutUser(req, res) {
+  try {
+    const token = req.cookies.token;
+    res.clearCookie("token");
+
+    await blacklistModel.create({
+      token,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "logout successfully!!!",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server error" });
+  }
+}
+
+module.exports = { registerUser, loginUser, getMe, logoutUser };
