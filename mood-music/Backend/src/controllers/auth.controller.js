@@ -1,5 +1,4 @@
 const userModel = require("../models/user.model.js");
-const blacklistModel = require("../models/blacklist.model.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const redis = require("../config/cache.js");

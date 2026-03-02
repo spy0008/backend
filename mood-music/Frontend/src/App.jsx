@@ -1,14 +1,9 @@
+//import FaceExpression from './features/FaceExpression/components/FaceExpression'
 
-import './App.css'
-import FaceExpression from './features/FaceExpression/components/FaceExpression'
+import AppRouter from "./AppRouter";
 
 function App() {
-
-  return (
-    <>
-     <FaceExpression/>
-    </>
-  )
+  return <AppRouter />;
 }
 
-export default App
+export default App;
