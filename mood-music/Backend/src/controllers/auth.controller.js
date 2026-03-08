@@ -116,6 +116,9 @@ async function loginUser(req, res) {
 
 async function getMe(req, res) {
   try {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     const user = await userModel.findById(req.user.id);
 
     res.status(200).json({

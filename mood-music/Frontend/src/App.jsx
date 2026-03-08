@@ -1,9 +1,12 @@
-//import FaceExpression from './features/FaceExpression/components/FaceExpression'
-
 import AppRouter from "./AppRouter";
+import { AuthProvider } from "./features/auth/auth.context";
 
 function App() {
-  return <AppRouter />;
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
+  );
 }
 
 export default App;

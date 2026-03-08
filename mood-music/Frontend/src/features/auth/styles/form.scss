@@ -11,10 +11,17 @@
     justify-content: center;
     flex-direction: column;
     gap: 0.5rem;
-    border: 1px solid wheat;
+    border: 1px solid rgba(0, 0, 0, 0.184);
     padding: 3rem;
     background-color: whitesmoke;
     border-radius: 1rem;
+    transition: all 0.3s ease-in;
+
+    p{
+      color: rgb(116, 115, 115);
+      max-width: 280px;
+      text-align: center;
+    }
 
     h1 {
       color: rgb(26, 26, 26);
@@ -25,6 +32,22 @@
       flex-direction: column;
       gap: 1rem;
 
+      p {
+        color: rgb(106, 106, 106);
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .auth-link {
+        text-decoration: none;
+        color: rgb(88, 88, 231);
+      }
+
+      .auth-link:hover {
+        text-decoration: underline;
+        transition: all 0.3s ease;
+      }
+
       input,
       button {
         padding-inline: 1rem;
@@ -32,6 +55,11 @@
         border: none;
         outline: none;
         border-radius: 0.2rem;
+      }
+
+      input:focus {
+        outline: 1px solid blue;
+        transition: all 0.3 ease;
       }
 
       button {
@@ -52,5 +80,9 @@
         transition: all 0.2s ease;
       }
     }
+  }
+
+  .form-body:hover {
+    box-shadow: 0px 2px 8px black;
   }
 }
