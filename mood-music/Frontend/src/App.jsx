@@ -1,10 +1,13 @@
 import AppRouter from "./AppRouter";
 import { AuthProvider } from "./features/auth/auth.context";
+import { SongContextProvider } from "./features/home/song.context";
 
 function App() {
   return (
     <AuthProvider>
-      <AppRouter />
+      <SongContextProvider>
+        <AppRouter />
+      </SongContextProvider>
     </AuthProvider>
   );
 }
