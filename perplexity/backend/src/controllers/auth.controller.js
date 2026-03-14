@@ -17,6 +17,8 @@ export async function register(req, res) {
         $or: [ { email }, { username } ]
     })
 
+    console.log(process.env.JWT_SECRET)
+
     if (isUserAlreadyExists) {
         return res.status(400).json({
             message: "User with this email or username already exists",
@@ -67,7 +69,7 @@ export async function register(req, res) {
 export async function login(req, res) {
     const { email, password } = req.body;
 
-    const user = await userModel.findOne({ email })
+    const user = await userModel.findOne({ email }).select("+password")
 
     if (!user) {
         return res.status(400).json({
@@ -123,7 +125,7 @@ export async function login(req, res) {
 export async function getMe(req, res) {
     const userId = req.user.id;
 
-    const user = await userModel.findById(userId).select("-password");
+    const user = await userModel.findById(userId)
 
     if (!user) {
         return res.status(404).json({
@@ -166,18 +168,15 @@ export async function verifyEmail(req, res) {
             })
         }
 
+        if (user.verified) {
+            return res.redirect('http://localhost:3000/login?verified=already');
+        }
+
         user.verified = true;
 
         await user.save();
 
-        const html =
-            `
-        <h1>Email Verified Successfully!</h1>
-        <p>Your email has been verified. You can now log in to your account.</p>
-        <a href="http://localhost:3000/login">Go to Login</a>
-    `
-
-        return res.send(html);
+        return res.redirect('http://localhost:3000/login?verified=success');
     } catch (err) {
         return res.status(400).json({
             message: "Invalid or expired token",
@@ -185,4 +184,61 @@ export async function verifyEmail(req, res) {
             err: err.message
         })
     }
+}
+
+
+/**
+ * @desc Resend email verification token
+ * @route POST /api/auth/resend-verification
+ * @access Public
+ * @body { email }
+ */
+export async function resendVerification(req, res) {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({
+            message: "Email is required",
+            success: false,
+            err: "Missing email"
+        });
+    }
+
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+        return res.status(400).json({
+            message: "User with this email does not exist",
+            success: false,
+            err: "User not found"
+        });
+    }
+
+    if (user.verified) {
+        return res.status(400).json({
+            message: "Email already verified",
+            success: false,
+            err: "Already verified"
+        });
+    }
+
+    const emailVerificationToken = jwt.sign({
+        email: user.email,
+    }, process.env.JWT_SECRET);
+
+    await sendEmail({
+        to: email,
+        subject: "Verify your Perplexity account",
+        html: `
+            <p>Hi ${user.username},</p>
+            <p>Please verify your email address by clicking the link below:</p>
+            <a href="http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}">Verify Email</a>
+            <p>If you did not request this, please ignore this email.</p>
+        `
+    });
+
+    return res.status(200).json({
+        message: "Verification email sent",
+        success: true
+    });
 }

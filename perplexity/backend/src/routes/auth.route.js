@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   register,
   verifyEmail,
+  resendVerification,
   login,
   getMe,
 } from "../controllers/auth.controller.js";
@@ -43,5 +44,13 @@ authRouter.get("/get-me", authUser, getMe);
  * @query { token }
  */
 authRouter.get("/verify-email", verifyEmail);
+
+/**
+ * @route POST /api/auth/resend-verification
+ * @desc Resend verification email
+ * @access Public
+ * @body { email }
+ */
+authRouter.post("/resend-verification", resendVerification);
 
 export default authRouter;
