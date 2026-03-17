@@ -3,6 +3,7 @@ import Login from "../features/auth/pages/Login";
 import Register from "../features/auth/pages/Register";
 import Dashborad from "../features/chat/pages/Dashborad";
 import Protected from "../features/auth/components/Protected";
+import EmailVerify from "../features/auth/pages/EmailVerify";
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +20,12 @@ export const router = createBrowserRouter([
       <Protected>
         <Dashborad />
       </Protected>
+    ),
+  },
+  {
+    path: "/verify-email",
+    element: (
+        <EmailVerify />
     ),
   },
 ]);

@@ -1,27 +1,75 @@
 import React, { useState } from "react";
-import { Link } from "react-router";
+import { Link, Navigate } from "react-router";
+import { useAuth } from "../hook/useAuth";
+import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
 const Register = () => {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const loading = useSelector((state) => state.auth.loading);
+  const user = useSelector((state) => state.auth.user);
+  const { handleRegister } = useAuth();
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    // Replace with real submit logic (API call)
-    console.log("Register form submit", form);
-    setTimeout(() => setLoading(false), 700);
+    const result = await handleRegister({
+      username: form.username,
+      email: form.email,
+      password: form.password,
+    });
+    if (result?.success) {
+      toast.success(
+        <>
+          {result?.message}{" "}
+          <a
+            href="https://mail.google.com"
+            target="_self"
+            className="text-blue-400 hover:underline font-medium"
+          >
+            Click here to open Gmail
+          </a>
+        </>,
+      );
+    } else {
+      toast.error(result?.message || "Registration Failed");
+    }
   };
+
+  if (!loading && user) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6 relative overflow-hidden">
       <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
-        <div style={{ position: 'absolute', left: '-10%', top: '-20%', width: '60%', height: '120%', background: 'radial-gradient(closest-side, rgba(139,92,246,0.16), transparent)', filter: 'blur(60px)' }} />
-        <div style={{ position: 'absolute', right: '-10%', bottom: '-10%', width: '50%', height: '90%', background: 'radial-gradient(closest-side, rgba(99,102,241,0.08), transparent)', filter: 'blur(80px)' }} />
+        <div
+          style={{
+            position: "absolute",
+            left: "-10%",
+            top: "-20%",
+            width: "60%",
+            height: "120%",
+            background:
+              "radial-gradient(closest-side, rgba(139,92,246,0.16), transparent)",
+            filter: "blur(60px)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: "-10%",
+            bottom: "-10%",
+            width: "50%",
+            height: "90%",
+            background:
+              "radial-gradient(closest-side, rgba(99,102,241,0.08), transparent)",
+            filter: "blur(80px)",
+          }}
+        />
       </div>
       <div className="w-full max-w-md bg-slate-900/70 backdrop-blur-sm border border-slate-700 rounded-2xl shadow-xl p-8">
         <div className="text-center mb-6">
