@@ -13,6 +13,7 @@ import {
   createNewChat,
   addNewMessage,
   addMessages,
+  deleteChatLocal,
 } from "../chat.slice.js";
 import { useDispatch } from "react-redux";
 
@@ -110,12 +111,25 @@ export const useChat = () => {
     }
   }
 
-  async function handleChatDelete(chatId) {}
+  async function handleChatDelete(chatId) {
+    try {
+      dispatch(setLoading(true));
+
+      await deleteChat(chatId);
+
+      dispatch(deleteChatLocal(chatId));
+    } catch (error) {
+      setError(error.response?.data?.message || "Delete chat failed");
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }
 
   return {
     initializeSocketConnection,
     handleSendMessage,
     handleGetChats,
     handleOpenChat,
+    handleChatDelete,
   };
 };

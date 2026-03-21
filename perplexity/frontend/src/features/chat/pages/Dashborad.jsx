@@ -5,11 +5,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
+import { useRef } from "react";
 
 import {
   Plus,
   Settings,
-  Paperclip,
   Send,
   Sparkles,
   Clock,
@@ -17,10 +17,9 @@ import {
   Menu,
   X,
   Trash2,
-  Circle,
-  Loader,
   Loader2,
 } from "lucide-react";
+import { getContent } from "../utils/helper";
 
 const Dashborad = () => {
   const chat = useChat();
@@ -30,11 +29,15 @@ const Dashborad = () => {
   const chats = useSelector((state) => state.chat.chats);
   const currentChatId = useSelector((state) => state.chat.currentChatId);
   const isLoading = useSelector((state) => state.chat.isLoading);
+  const bottomRef = useRef(null);
 
   useEffect(() => {
-    // chat.initializeSocketConnection();
     chat.handleGetChats();
   }, []);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chats, currentChatId, isLoading]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -47,6 +50,10 @@ const Dashborad = () => {
   const openChat = (chatId) => {
     chat.handleOpenChat(chatId);
     setIsSidebarOpen(false);
+  };
+
+  const chatDelete = (chatId) => {
+    chat.handleChatDelete(chatId);
   };
 
   return (
@@ -129,11 +136,15 @@ const Dashborad = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        console.log("delete chat:", chat.id);
+                        chatDelete(chat.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 transition text-white/40 hover:text-red-400"
+                      className="opacity-0 cursor-pointer group-hover:opacity-100 transition text-white/40 hover:text-red-400"
                     >
-                      <Trash2 size={14} />
+                      {isLoading ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Trash2 size={14} />
+                      )}
                     </button>
                   </div>
                 );
@@ -218,7 +229,7 @@ const Dashborad = () => {
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeHighlight]}
                       >
-                        {msg.content}
+                        {getContent(msg.content)}
                       </ReactMarkdown>
                     )}
                   </div>
@@ -226,6 +237,23 @@ const Dashborad = () => {
               </div>
             );
           })}
+
+          {isLoading && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-purple-600/20 flex items-center justify-center text-xs">
+                ✦
+              </div>
+
+              <div className="rounded-2xl px-4 py-3">
+                <div className="flex gap-1 mt-2">
+                  <span className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" />
+                  <span className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce delay-150" />
+                  <span className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce delay-300" />
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
         </div>
 
         {/* INPUT */}
@@ -247,7 +275,11 @@ const Dashborad = () => {
                 className="cursor-pointer bg-purple-500 px-3 py-1.5 rounded-lg active:scale-95 transition-all duration-200"
                 type="submit"
               >
-                {isLoading ? <Loader2 className="animate-spin" size={16}/> : <Send size={16} />}
+                {isLoading ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  <Send size={16} />
+                )}
               </button>
             </form>
           </div>
