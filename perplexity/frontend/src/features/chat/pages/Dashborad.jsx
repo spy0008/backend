@@ -1,35 +1,49 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useChat } from "../hook/useChat";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
-import { useRef } from "react";
+import { motion } from "framer-motion";
+import PromptSuggestions from "../components/PromptSuggestions";
 
 import {
   Plus,
-  Settings,
   Send,
   Sparkles,
-  Clock,
-  Share2,
   Menu,
   X,
   Trash2,
   Loader2,
+  Settings,
+  Share2,
+  Clock,
+  Sun,
+  Moon,
 } from "lucide-react";
+
 import { getContent } from "../utils/helper";
+import { useTheme } from "../hook/useTheme";
 
 const Dashborad = () => {
   const chat = useChat();
   const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const { theme, toggleTheme } = useTheme();
   const { user } = useSelector((state) => state.auth);
   const chats = useSelector((state) => state.chat.chats);
   const currentChatId = useSelector((state) => state.chat.currentChatId);
-  const isLoading = useSelector((state) => state.chat.isLoading);
+  const isSending = useSelector((state) => state.chat.isSending);
+  const isDeleting = useSelector((state) => state.chat.isDeleting);
+
   const bottomRef = useRef(null);
+
+  const filteredChats = Object.values(chats).filter((chat) =>
+    chat.title.toLowerCase().includes(search.toLowerCase()),
+  );
 
   useEffect(() => {
     chat.handleGetChats();
@@ -37,7 +51,7 @@ const Dashborad = () => {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chats, currentChatId, isLoading]);
+  }, [chats, currentChatId, isSending]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -52,16 +66,17 @@ const Dashborad = () => {
     setIsSidebarOpen(false);
   };
 
-  const chatDelete = (chatId) => {
-    chat.handleChatDelete(chatId);
+  const handleNewChat = () => {
+    chat.handleNewChat();
+    setIsSidebarOpen(false);
   };
 
   return (
-    <main className="h-screen w-full flex bg-[#05050a] text-white overflow-hidden">
+    <main className="h-screen w-full flex bg-white dark:bg-[#05050a] text-black dark:text-white overflow-hidden">
       {/* MOBILE OVERLAY */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -69,126 +84,129 @@ const Dashborad = () => {
       {/* SIDEBAR */}
       <aside
         className={`
-          fixed md:static z-50 top-0 left-0 h-full
-          w-65 flex flex-col justify-between
-          border-r border-white/5
-          bg-linear-to-b from-[#0a0a12] to-[#05050a]
+          fixed md:static z-50 top-0 left-0 h-full w-64 flex flex-col
+          bg-white dark:bg-[#0a0a12]
+          border-r border-gray-200 dark:border-white/5
           transform transition-transform duration-300
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
       >
-        <div>
-          {/* MOBILE HEADER */}
-          <div className="p-4 flex justify-between items-center md:hidden">
-            <h2 className="text-sm font-semibold">Chats</h2>
-            <button onClick={() => setIsSidebarOpen(false)}>
-              <X size={18} />
-            </button>
+        {/* MOBILE HEADER */}
+        <div className="p-4 flex justify-between items-center md:hidden">
+          <h2 className="text-sm font-semibold">Chats</h2>
+          <button onClick={() => setIsSidebarOpen(false)}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* LOGO */}
+        <div className="p-5 flex items-center gap-3">
+          <div className="w-9 h-9 text-white rounded-xl bg-linear-to-br from-purple-600 to-purple-400 flex items-center justify-center">
+            <Sparkles size={16} />
           </div>
+          <h1 className="text-sm font-semibold">Nexora</h1>
+        </div>
 
-          {/* LOGO */}
-          <div className="p-5 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg shadow-purple-600/30">
-              <Sparkles size={16} />
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold">Nexora</h1>
-            </div>
-          </div>
+        {/* NEW CHAT */}
+        <div className="px-4">
+          <button
+            onClick={handleNewChat}
+            className="w-full cursor-pointer flex items-center text-white justify-center gap-2 py-2.5 rounded-xl bg-linear-to-r from-purple-600 to-purple-500"
+          >
+            <Plus size={16} /> New Chat
+          </button>
+        </div>
 
-          {/* NEW CHAT */}
-          <div className="px-4">
-            <button className="w-full flex items-center justify-center gap-2 py-2.5 text-sm rounded-xl bg-linear-to-r from-purple-600 to-purple-500 hover:scale-[1.02] transition shadow-lg shadow-purple-600/20">
-              <Plus size={16} />
-              New Chat
-            </button>
-          </div>
+        {/* SEARCH */}
+        <div className="p-3">
+          <input
+            placeholder="Search chats..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-white/5 text-sm outline-none"
+          />
+        </div>
 
-          {/* CHATS */}
-          <div className="mt-6 px-3">
-            <p className="text-[10px] text-white/30 mb-2 px-2">RECENT CHATS</p>
+        {/* CHAT LIST */}
+        <div className="flex-1 overflow-y-auto px-2 space-y-1">
+          {filteredChats.map((c) => {
+            const isActive = currentChatId === c.id;
 
-            <div className="space-y-1 text-sm">
-              {Object.values(chats).map((chat) => {
-                const isActive = currentChatId === chat.id;
+            return (
+              <div
+                key={c.id}
+                onClick={() => openChat(c.id)}
+                className={`group flex justify-between items-center px-3 py-2 rounded-lg cursor-pointer ${
+                  isActive
+                    ? "bg-purple-600/80 text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-white/5 text-gray-700 dark:text-white/70"
+                }`}
+              >
+                <p className="truncate">{c.title}</p>
 
-                return (
-                  <div
-                    key={chat.id}
-                    onClick={() => openChat(chat.id)}
-                    className={`
-                      group flex items-center justify-between
-                      w-full px-3 py-2 rounded-lg cursor-pointer
-                      transition
-                      ${
-                        isActive
-                          ? "bg-purple-600/20 text-purple-300"
-                          : "hover:bg-white/5 text-white/70 hover:text-white"
-                      }
-                    `}
-                  >
-                    {/* TITLE */}
-                    <p className="truncate flex-1 pr-2" title={chat.title}>
-                      {chat.title.replace(/^"|"$/g, "")}
-                    </p>
-
-                    {/* DELETE BUTTON */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        chatDelete(chat.id);
-                      }}
-                      className="opacity-0 cursor-pointer group-hover:opacity-100 transition text-white/40 hover:text-red-400"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="animate-spin" size={14} />
-                      ) : (
-                        <Trash2 size={14} />
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                <button
+                  disabled={isDeleting}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    chat.handleChatDelete(c.id);
+                  }}
+                  className="opacity-0 cursor-pointer group-hover:opacity-100"
+                >
+                  {isDeleting ? (
+                    <Loader2 className="animate-spin" size={14} />
+                  ) : (
+                    <Trash2 className="hover:text-red-500" size={14} />
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </div>
 
         {/* PROFILE */}
-        <div className="p-4 border-t border-white/5 flex items-center justify-between">
+        <div className="p-4 border-t border-gray-200 dark:border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center text-xs">
+            <div className="w-9 h-9 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center text-xs">
               {user?.username?.[0]?.toUpperCase() || "A"}
             </div>
             <div>
               <p className="text-xs">{user?.username || "Alex Rivera"}</p>
-              <p className="text-[10px] text-white/40">Profile</p>
+              <p className="text-[10px] text-gray-500 dark:text-white/40">
+                Profile
+              </p>
             </div>
           </div>
-          <Settings size={16} className="text-white/40 cursor-pointer" />
+          <Settings size={16} className="text-gray-500 dark:text-white/40 cursor-pointer" />
         </div>
       </aside>
 
       {/* MAIN */}
-      <section className="flex-1 flex flex-col relative">
+      <section className="flex-1 flex flex-col">
         {/* HEADER */}
-        <div className="h-15 flex items-center justify-between px-6 border-b border-white/5 backdrop-blur-md bg-white/2">
+        <div className="h-15 flex items-center justify-between px-6 border-b border-gray-200 dark:border-white/5 backdrop-blur-md bg-white/50 dark:bg-white/2">
           <div className="flex items-center gap-3">
-            {/* MOBILE MENU */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center"
+              className="md:hidden w-9 h-9 rounded-lg bg-gray-200 dark:bg-white/5 flex items-center justify-center"
             >
               <Menu size={18} />
             </button>
-
             <h2 className="text-sm font-medium">Chat</h2>
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center">
+            <button
+              onClick={toggleTheme}
+              className="w-9 h-9 cursor-pointer rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center"
+            >
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+
+            <button className="w-9 h-9 rounded-lg bg-gray-200 dark:bg-white/5 hover:bg-gray-300 dark:hover:bg-white/10 flex items-center justify-center">
               <Share2 size={16} />
             </button>
-            <button className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center">
+
+            <button className="w-9 h-9 rounded-lg bg-gray-200 dark:bg-white/5 hover:bg-gray-300 dark:hover:bg-white/10 flex items-center justify-center">
               <Clock size={16} />
             </button>
           </div>
@@ -196,29 +214,38 @@ const Dashborad = () => {
 
         {/* CHAT */}
         <div className="messages flex-1 overflow-y-auto px-4 md:px-10 py-6 space-y-6">
-          {chats[currentChatId]?.messages?.map((msg, index) => {
+          {!currentChatId && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Sparkles size={40} className="text-purple-400 mb-4" />
+              <h2 className="text-xl">Welcome to Nexora</h2>
+              <p className="text-gray-500 dark:text-white/50">
+                How can I help you today?
+              </p>
+              <PromptSuggestions onSelect={(t) => setMessage(t)} />
+            </div>
+          )}
+
+          {chats[currentChatId]?.messages?.map((msg, i) => {
             const isUser = msg.role === "user";
 
             return (
-              <div
-                key={index}
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 className={`flex ${isUser ? "justify-end" : "gap-3"}`}
               >
                 {!isUser && (
-                  <div className="hidden w-8 h-8 rounded-full bg-purple-600/20 sm:flex items-center justify-center text-xs">
+                  <div className="w-8 h-8 rounded-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                     ✦
                   </div>
                 )}
 
-                <div className="max-w-150">
-                  {!isUser && (
-                    <p className="text-[11px] text-purple-400 mb-1">Nexora</p>
-                  )}
-
+                <div className="max-w-xl">
                   <div
-                    className={`text-lg md:text-base leading-relaxed px-4 py-3 rounded-2xl ${
+                    className={`px-4 py-3 rounded-2xl ${
                       isUser
-                        ? "bg-linear-to-r from-purple-600 to-purple-500"
+                        ? "bg-linear-to-r from-purple-600 to-purple-500 text-white"
                         : ""
                     }`}
                   >
@@ -234,55 +261,62 @@ const Dashborad = () => {
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
 
-          {isLoading && (
+          {isSending && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-purple-600/20 flex items-center justify-center text-xs">
+              <div className="w-8 h-8 rounded-full bg-purple-600/20 flex items-center justify-center">
                 ✦
               </div>
-
-              <div className="rounded-2xl px-4 py-3">
-                <div className="flex gap-1 mt-2">
-                  <span className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" />
-                  <span className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce delay-150" />
-                  <span className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce delay-300" />
-                </div>
+              <div className="flex gap-1">
+                <span className="w-2 h-2 bg-gray-400 dark:bg-white/60 rounded-full animate-bounce" />
+                <span className="w-2 h-2 bg-gray-400 dark:bg-white/60 rounded-full animate-bounce delay-150" />
+                <span className="w-2 h-2 bg-gray-400 dark:bg-white/60 rounded-full animate-bounce delay-300" />
               </div>
             </div>
           )}
+
           <div ref={bottomRef} />
         </div>
 
         {/* INPUT */}
         <div className="p-4 md:p-6">
-          <div className="max-w-3xl mx-auto">
-            <form
-              onSubmit={handleSubmit}
-              className="flex items-center gap-3 bg-white/4 border border-white/10 backdrop-blur-xl rounded-2xl px-4 py-3"
-            >
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Ask anything..."
-                className="flex-1 bg-transparent outline-none text-sm placeholder:text-white/40"
-              />
+          <motion.form
+            onSubmit={handleSubmit}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="flex items-center gap-3 
+            bg-gray-100 dark:bg-white/5 
+            border border-gray-200 dark:border-white/10 
+            backdrop-blur-2xl rounded-2xl px-4 py-3
+            shadow-lg shadow-purple-500/10
+            focus-within:ring-2 focus-within:ring-purple-500/40
+            transition-all duration-300"
+          >
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Ask anything..."
+              className="flex-1 bg-transparent outline-none text-sm placeholder:text-gray-400 dark:placeholder:text-white/40"
+            />
 
-              <button
-                className="cursor-pointer bg-purple-500 px-3 py-1.5 rounded-lg active:scale-95 transition-all duration-200"
-                type="submit"
-              >
-                {isLoading ? (
-                  <Loader2 className="animate-spin" size={16} />
-                ) : (
-                  <Send size={16} />
-                )}
-              </button>
-            </form>
-          </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              type="submit"
+              disabled={isSending}
+              className="cursor-pointer bg-linear-to-r from-purple-600 to-purple-500 px-3 py-2 rounded-xl shadow-md shadow-purple-500/30"
+            >
+              {isSending ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <Send size={16} />
+              )}
+            </motion.button>
+          </motion.form>
         </div>
       </section>
     </main>

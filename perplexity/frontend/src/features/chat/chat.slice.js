@@ -5,7 +5,9 @@ const chatSlice = createSlice({
   initialState: {
     chats: {},
     currentChatId: null,
-    isLoading: false,
+    isSending: false,
+    isFetchingChats: false,
+    isDeleting: false,
     error: null,
   },
   reducers: {
@@ -15,8 +17,14 @@ const chatSlice = createSlice({
     setCurrentChatId: (state, action) => {
       state.currentChatId = action.payload;
     },
-    setLoading: (state, action) => {
-      state.isLoading = action.payload;
+    setSending: (state, action) => {
+      state.isSending = action.payload;
+    },
+    setFetchingChats: (state, action) => {
+      state.isFetchingChats = action.payload;
+    },
+    setDeleting: (state, action) => {
+      state.isDeleting = action.payload;
     },
     setError: (state, action) => {
       state.error = action.payload;
@@ -54,7 +62,9 @@ const chatSlice = createSlice({
 export const {
   setChat,
   setCurrentChatId,
-  setLoading,
+  setSending,
+  setFetchingChats,
+  setDeleting,
   setError,
   createNewChat,
   addNewMessage,

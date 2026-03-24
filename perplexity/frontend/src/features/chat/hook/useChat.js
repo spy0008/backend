@@ -8,7 +8,9 @@ import {
 import {
   setChat,
   setError,
-  setLoading,
+  setSending,
+  setDeleting,
+  setFetchingChats,
   setCurrentChatId,
   createNewChat,
   addNewMessage,
@@ -22,45 +24,53 @@ export const useChat = () => {
 
   async function handleSendMessage({ message, chatId }) {
     try {
-      dispatch(setLoading(true));
+      dispatch(setSending(true));
+
       const data = await sendMessage({ message, chatId });
       const { aiMessage, chat } = data;
+
+      const finalChatId = chatId || chat._id;
+
       if (!chatId) {
         dispatch(
           createNewChat({
-            chatId: chat._id,
+            chatId: finalChatId,
             title: chat.title,
           }),
         );
       }
+
+      // 👉 set active chat
+      dispatch(setCurrentChatId(finalChatId));
+
+      // 👉 add messages
       dispatch(
         addNewMessage({
-          chatId: chatId || chat._id,
+          chatId: finalChatId,
           content: message,
           role: "user",
         }),
       );
+
       dispatch(
         addNewMessage({
-          chatId: chatId || chat._id,
+          chatId: finalChatId,
           content: aiMessage.content,
           role: aiMessage.role,
         }),
       );
-      dispatch(setCurrentChatId(chat._id));
+
       return data;
     } catch (error) {
-      dispatch(
-        setError(error.response?.data?.message || "Registration failed"),
-      );
+      dispatch(setError(error.response?.data?.message || "Message failed"));
     } finally {
-      dispatch(setLoading(false));
+      dispatch(setSending(false));
     }
   }
 
   async function handleGetChats() {
     try {
-      dispatch(setLoading(true));
+      dispatch(setFetchingChats(true));
       const data = await getChats();
       const { chats } = data;
       dispatch(
@@ -80,13 +90,13 @@ export const useChat = () => {
     } catch (error) {
       dispatch(setError(error.response?.data?.message || "Get chats failed"));
     } finally {
-      dispatch(setLoading(false));
+      dispatch(setFetchingChats(false));
     }
   }
 
   async function handleOpenChat(chatId) {
     try {
-      dispatch(setLoading(true));
+      dispatch(setFetchingChats(true));
       const data = await getMessages(chatId);
 
       const { messages } = data;
@@ -107,13 +117,13 @@ export const useChat = () => {
     } catch (error) {
       setError(error.response?.data?.message || "Get chat failed");
     } finally {
-      dispatch(setLoading(false));
+      dispatch(setFetchingChats(false));
     }
   }
 
   async function handleChatDelete(chatId) {
     try {
-      dispatch(setLoading(true));
+      dispatch(setDeleting(true));
 
       await deleteChat(chatId);
 
@@ -121,8 +131,12 @@ export const useChat = () => {
     } catch (error) {
       setError(error.response?.data?.message || "Delete chat failed");
     } finally {
-      dispatch(setLoading(false));
+      dispatch(setDeleting(false));
     }
+  }
+
+  function handleNewChat() {
+    dispatch(setCurrentChatId(null));
   }
 
   return {
@@ -131,5 +145,6 @@ export const useChat = () => {
     handleGetChats,
     handleOpenChat,
     handleChatDelete,
+    handleNewChat,
   };
 };
